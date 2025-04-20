@@ -3,6 +3,7 @@ import logging
 import random
 import time
 from json.decoder import JSONDecodeError
+from typing import Optional
 
 import requests
 from requests.adapters import HTTPAdapter
@@ -82,6 +83,7 @@ class PrivateRequestMixin:
     request_timeout = 1
     domain = config.API_DOMAIN
     last_response = None
+    last_cookies = {}
     last_json = {}
 
     def __init__(self, *args, **kwargs):
@@ -309,6 +311,7 @@ class PrivateRequestMixin:
         domain: str = None,
     ):
         self.last_response = None
+        self.last_cookies = None
         self.last_json = last_json = {}  # for Sentry context in traceback
         self.private.headers.update(self.base_headers)
         if headers:
@@ -359,6 +362,8 @@ class PrivateRequestMixin:
             response.raise_for_status()
             # last_json - for Sentry context in traceback
             self.last_json = last_json = response.json()
+            self.last_cookies = response.cookies.get_dict(domain=domain)
+            self.private.cookies.update(self.last_cookies)
             self.logger.debug("last_json %s", last_json)
         except JSONDecodeError as e:
             self.logger.error(

@@ -33,6 +33,7 @@ class PublicRequestMixin:
     GRAPHQL_PUBLIC_API_URL = "https://www.instagram.com/graphql/query/"
     last_public_response = None
     last_public_json = {}
+    last_public_cookies = {}
     public_request_logger = logging.getLogger("public_request")
     request_timeout = 1
     last_response_ts = 0
@@ -157,6 +158,9 @@ class PublicRequestMixin:
                     timeout=timeout,
                 )
 
+            self.last_public_cookies = response.cookies.get_dict()
+            self.public.cookies.update(self.last_public_cookies)
+
             if stream:
                 return response
 
@@ -185,6 +189,8 @@ class PublicRequestMixin:
             response.raise_for_status()
             if return_json:
                 self.last_public_json = response.json()
+                self.last_public_cookies = response.cookies.get_dict()
+                self.public.cookies.update(self.last_public_cookies)
                 return self.last_public_json
             return response.text
 
